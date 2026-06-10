@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather Dashboard - Login</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-grad1: #0ea5e920;
+      --bg-grad2: #22d3ee22;
+      --card: #0b1220;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #22d3ee;
+      --accent-2: #60a5fa;
+      --border: #1f2937;
+      --error: #ef4444;
+      --success: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      background: radial-gradient(1200px 600px at 80% -10%, var(--bg-grad1), transparent 60%),
+                  radial-gradient(1000px 600px at -10% 110%, var(--bg-grad2), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container { width: 100%; max-width: 420px; }
+
+    .logo { text-align: center; margin-bottom: 32px; }
+    .logo-icon {
+      width: 80px; height: 80px; margin: 0 auto 16px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-radius: 20px; display: flex; align-items: center;
+      justify-content: center; font-size: 48px;
+    }
+    .logo-text { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .logo-subtitle { color: var(--muted); font-size: 14px; transition: all 0.3s; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    /* ── Tabs (Login / Sign Up) ── */
+    .tabs {
+      display: flex; gap: 8px; margin-bottom: 32px;
+      background: var(--bg); padding: 4px; border-radius: 12px;
+    }
+    .tab {
+      flex: 1; padding: 12px; background: transparent; border: none;
+      color: var(--muted); font-weight: 600; border-radius: 8px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .tab.active { background: var(--card); color: var(--text); }
+    .tab:hover:not(.active) { color: var(--text); }
+
+    /* ── Views: login/signup tabs vs forgot-password flow ── */
+    #tabsView  { display: block; }
+    #fpView    { display: none;  }
+
+    /* ── Shared form styles ── */
+    .form { display: none; }
+    .form.active { display: block; }
+
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+    .form-input {
+      width: 100%; padding: 12px 16px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 12px;
+      color: var(--text); font-size: 16px; outline: none; transition: all 0.2s;
+    }
+    .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1); }
+    .form-input::placeholder { color: var(--muted); }
+
+    .submit-btn {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border: none; border-radius: 12px; color: white;
+      font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(34, 211, 238, 0.3); }
+    .submit-btn:active:not(:disabled) { transform: translateY(0); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .message {
+      padding: 12px 16px; border-radius: 12px; margin-bottom: 20px;
+      font-size: 14px; display: none;
+    }
+    .message.show { display: block; }
+    .message.error   { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--error); color: var(--error); }
+    .message.success { background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); color: var(--success); }
+
+    .demo-info {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px; margin-top: 20px;
+      font-size: 14px; color: var(--muted);
+    }
+    .demo-info strong { color: var(--text); }
+
+    /* ── Forgot password: progress dots ── */
+    .fp-progress { display: flex; justify-content: center; gap: 8px; margin-bottom: 28px; }
+    .fp-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: all 0.3s; }
+    .fp-dot.active { background: var(--accent); width: 24px; border-radius: 4px; }
+    .fp-dot.done   { background: var(--success); }
+
+    /* ── Forgot password: step screens ── */
+    .fp-step { display: none; }
+    .fp-step.active { display: block; }
+
+    .fp-header { text-align: center; margin-bottom: 28px; }
+    .fp-icon {
+      font-size: 48px; margin-bottom: 12px; display: block;
+      animation: fpFloat 3s ease-in-out infinite;
+    }
+    @keyframes fpFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    .fp-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .fp-desc  { color: var(--muted); font-size: 14px; line-height: 1.6; }
+    .fp-desc strong { color: var(--accent); }
+
+    /* ── OTP boxes ── */
+    .otp-row { display: flex; gap: 10px; justify-content: center; margin: 24px 0; }
+    .otp-input {
+      width: 48px; height: 56px; background: var(--bg); border: 2px solid var(--border);
+      border-radius: 12px; color: var(--text); font-size: 22px; font-weight: 700;
+      text-align: center; outline: none; transition: all 0.2s;
+    }
+    .otp-input:focus  { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(34,211,238,0.15); }
+    .otp-input.filled  { border-color: var(--accent-2); }
+    .otp-input.error   { border-color: var(--error);   background: rgba(239,68,68,0.06); }
+    .otp-input.success { border-color: var(--success); background: rgba(16,185,129,0.06); }
+
+    /* ── Password field with show/hide ── */
+    .pw-wrap { position: relative; }
+    .pw-toggle {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--muted); cursor: pointer;
+      font-size: 17px; padding: 0; line-height: 1;
+    }
+    .pw-toggle:hover { color: var(--text); }
+
+    /* ── Strength bar ── */
+    .strength-bar { display: flex; gap: 4px; margin-top: 8px; }
+    .strength-seg { flex: 1; height: 3px; border-radius: 2px; background: var(--border); transition: background 0.3s; }
+    .strength-label { font-size: 12px; margin-top: 4px; color: var(--muted); min-height: 16px; }
+
+    /* ── Resend / timer ── */
+    .resend-row { text-align: center; margin-top: 20px; font-size: 14px; color: var(--muted); }
+    .resend-btn {
+      background: none; border: none; color: var(--accent); font-size: 14px;
+      cursor: pointer; font-weight: 600; padding: 0;
+    }
+    .resend-btn:disabled { opacity: 0.4; cursor: not-allowed; color: var(--muted); }
+    .fp-timer { display: inline-block; color: var(--accent-2); font-weight: 600; min-width: 36px; }
+
+    /* ── Back link inside forgot-password view ── */
+    .fp-back {
+      display: flex; align-items: center; gap: 6px;
+      background: none; border: none; color: var(--muted);
+      font-size: 14px; cursor: pointer; padding: 0; margin-bottom: 20px;
+      transition: color 0.2s;
+    }
+    .fp-back:hover { color: var(--accent); }
+
+    /* ── Success checkmark ── */
+    .fp-checkmark {
+      font-size: 60px; display: block; text-align: center; margin-bottom: 12px;
+      animation: fpPop 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+    }
+    @keyframes fpPop { 0%{transform:scale(0);opacity:0} 100%{transform:scale(1);opacity:1} }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+    .shake { animation: shake 0.3s; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <div class="logo-icon">⛅</div>
+      <div class="logo-text">Weather Dashboard</div>
+      <div class="logo-subtitle" id="logoSubtitle">Your personal weather companion</div>
+    </div>
+
+    <div class="card">
+
+      <!-- ════════════════════════════════════════
+           VIEW A: Login / Sign Up tabs
+      ════════════════════════════════════════ -->
+      <div id="tabsView">
+        <div class="tabs">
+          <button class="tab active" data-tab="login">Login</button>
+          <button class="tab" data-tab="signup">Sign Up</button>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <!-- Login Form -->
+        <form id="loginForm" class="form active">
+          <div class="form-group">
+            <label class="form-label" for="loginEmail">Email</label>
+            <input type="email" id="loginEmail" class="form-input" placeholder="your@email.com" required />
+            <span class="field-hint" style="font-size:12px;margin-top:4px;display:block;min-height:16px;"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" required />
+          </div>
+          <button type="submit" class="submit-btn">Login</button>
+          <div style="text-align:center;margin-top:16px;font-size:14px;color:var(--muted)">
+            <button type="button" id="goToForgot" style="background:none;border:none;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;">
+              Forgot your password?
+            </button>
+          </div>
+        </form>
+
+        <!-- Signup Form -->
+        <form id="signupForm" class="form">
+          <div class="form-group">
+            <label class="form-label" for="signupName">Full Name</label>
+            <input type="text" id="signupName" class="form-input" placeholder="John Doe" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="signupEmail">Email</label>
+            <input type="email" id="signupEmail" class="form-input" placeholder="your@email.com" required />
+            <span class="field-hint" style="font-size:12px;margin-top:4px;display:block;min-height:16px;"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="signupPassword">Password</label>
+            <input type="password" id="signupPassword" class="form-input" placeholder="At least 6 characters" required minlength="6" />
+          </div>
+          <button type="submit" class="submit-btn">Create Account</button>
+        </form>
+
+        <div class="demo-info">
+          <strong>✉️ Note:</strong> After signing up, you'll receive a 6-digit verification code by email. Check your inbox (and spam folder).
+        </div>
+      </div><!-- /tabsView -->
+
+
+      <!-- ════════════════════════════════════════
+           VIEW B: Forgot Password flow
+      ════════════════════════════════════════ -->
+      <div id="fpView">
+        <button class="fp-back" id="fpBackBtn">← Back to Login</button>
+
+        <!-- Progress dots -->
+        <div class="fp-progress">
+          <div class="fp-dot active" id="fpDot1"></div>
+          <div class="fp-dot" id="fpDot2"></div>
+          <div class="fp-dot" id="fpDot3"></div>
+        </div>
+
+        <div id="fpMessage" class="message"></div>
+
+        <!-- FP Step 1: Enter email -->
+        <div class="fp-step active" id="fpStep1">
+          <div class="fp-header">
+            <span class="fp-icon">🔑</span>
+            <div class="fp-title">Forgot your password?</div>
+            <div class="fp-desc">Enter your email and we'll send a 6-digit reset code.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="fpEmail">Email Address</label>
+            <input type="email" id="fpEmail" class="form-input" placeholder="your@email.com" autocomplete="email" />
+            <span id="fpEmailHint" style="font-size:12px;margin-top:4px;display:block;min-height:16px;"></span>
+          </div>
+          <button class="submit-btn" id="fpSendBtn">Send Reset Code</button>
+        </div>
+
+        <!-- FP Step 2: Enter OTP -->
+        <div class="fp-step" id="fpStep2">
+          <div class="fp-header">
+            <span class="fp-icon">📨</span>
+            <div class="fp-title">Enter the code</div>
+            <div class="fp-desc">We sent a 6-digit code to<br><strong id="fpEmailDisplay">your email</strong></div>
+          </div>
+          <div class="otp-row" id="fpOtpRow">
+            <input class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code" id="fpotp0">
+            <input class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]" id="fpotp1">
+            <input class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]" id="fpotp2">
+            <input class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]" id="fpotp3">
+            <input class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]" id="fpotp4">
+            <input class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]" id="fpotp5">
+          </div>
+          <button class="submit-btn" id="fpVerifyBtn" disabled>Verify Code</button>
+          <div class="resend-row">
+            Didn't receive it?&nbsp;
+            <button class="resend-btn" id="fpResendBtn" disabled>Resend</button>
+            <span class="fp-timer" id="fpTimer"></span>
+          </div>
+        </div>
+
+        <!-- FP Step 3: New password -->
+        <div class="fp-step" id="fpStep3">
+          <div class="fp-header">
+            <span class="fp-icon">🔒</span>
+            <div class="fp-title">Set a new password</div>
+            <div class="fp-desc">Choose a strong password for your account.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="fpNewPw">New Password</label>
+            <div class="pw-wrap">
+              <input type="password" id="fpNewPw" class="form-input" placeholder="At least 6 characters" autocomplete="new-password" />
+              <button type="button" class="pw-toggle" id="fpToggleNew">👁</button>
+            </div>
+            <div class="strength-bar">
+              <div class="strength-seg" id="fpSeg1"></div>
+              <div class="strength-seg" id="fpSeg2"></div>
+              <div class="strength-seg" id="fpSeg3"></div>
+              <div class="strength-seg" id="fpSeg4"></div>
+            </div>
+            <div class="strength-label" id="fpStrengthLabel"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="fpConfirmPw">Confirm Password</label>
+            <div class="pw-wrap">
+              <input type="password" id="fpConfirmPw" class="form-input" placeholder="Repeat your new password" autocomplete="new-password" />
+              <button type="button" class="pw-toggle" id="fpToggleConfirm">👁</button>
+            </div>
+            <span id="fpMatchHint" style="font-size:12px;margin-top:4px;display:block;min-height:16px;"></span>
+          </div>
+          <button class="submit-btn" id="fpResetBtn">Reset Password</button>
+        </div>
+
+        <!-- FP Step 4: Success -->
+        <div class="fp-step" id="fpStep4">
+          <span class="fp-checkmark">✅</span>
+          <div style="text-align:center">
+            <div class="fp-title" style="margin-bottom:10px">Password Reset!</div>
+            <div class="fp-desc">Your password has been updated.<br>Taking you back to login…</div>
+          </div>
+        </div>
+
+      </div><!-- /fpView -->
+
+    </div><!-- /card -->
+  </div><!-- /container -->
+
+  <script>
+    // ─────────────────────────────────────────────────────────
+    //  SHARED UTILITIES
+    // ─────────────────────────────────────────────────────────
+    function isValidEmail(email) {
+      const re = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,6}$/;
+      if (!re.test(email)) return false;
+      const [local, domain] = email.split('@');
+      if (!local || !domain || !domain.includes('.')) return false;
+      const parts = domain.split('.');
+      return parts[parts.length - 1].length >= 2 && parts[0].length >= 1;
+    }
+
+    function validateEmailField(input) {
+      const val  = input.value.trim();
+      const hint = input.parentElement.querySelector('.field-hint');
+      if (!val) { input.style.borderColor = ''; if (hint) hint.textContent = ''; return false; }
+      if (!isValidEmail(val)) {
+        input.style.borderColor = 'var(--error)';
+        if (hint) { hint.textContent = '⚠ Enter a valid email like you@gmail.com'; hint.style.color = 'var(--error)'; }
+        return false;
+      }
+      input.style.borderColor = 'var(--success)';
+      if (hint) { hint.textContent = '✓ Looks good!'; hint.style.color = 'var(--success)'; }
+      return true;
+    }
+
+    document.querySelectorAll('input[type="email"]').forEach(input => {
+      input.addEventListener('blur', () => validateEmailField(input));
+      input.addEventListener('input', () => { if (input.style.borderColor === 'var(--error)') validateEmailField(input); });
+    });
+
+    // ─────────────────────────────────────────────────────────
+    //  VIEW SWITCHING: tabs <-> forgot-password
+    // ─────────────────────────────────────────────────────────
+    const tabsView = document.getElementById('tabsView');
+    const fpView   = document.getElementById('fpView');
+
+    function showForgotPassword() {
+      tabsView.style.display = 'none';
+      fpView.style.display   = 'block';
+      document.getElementById('logoSubtitle').textContent = 'Reset your password';
+      resetFpFlow();
+    }
+
+    function showTabsView() {
+      fpView.style.display   = 'none';
+      tabsView.style.display = 'block';
+      document.getElementById('logoSubtitle').textContent = 'Your personal weather companion';
+      hideMessage();
+    }
+
+    document.getElementById('goToForgot').addEventListener('click', showForgotPassword);
+    document.getElementById('fpBackBtn').addEventListener('click', showTabsView);
+
+    // ─────────────────────────────────────────────────────────
+    //  TAB SWITCHING (Login / Sign Up)
+    // ─────────────────────────────────────────────────────────
+    const tabs     = document.querySelectorAll('.tab');
+    const forms    = document.querySelectorAll('.form');
+    const messageEl = document.getElementById('message');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        forms.forEach(f => f.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab + 'Form').classList.add('active');
+        hideMessage();
+      });
+    });
+
+    function showMessage(msg, type = 'error') {
+      messageEl.textContent = msg;
+      messageEl.className   = `message show ${type}`;
+      if (type === 'error') {
+        messageEl.classList.add('shake');
+        setTimeout(() => messageEl.classList.remove('shake'), 300);
+      }
+    }
+    function hideMessage() { messageEl.className = 'message'; }
+
+    // ─────────────────────────────────────────────────────────
+    //  LOGIN FORM
+    // ─────────────────────────────────────────────────────────
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById('loginEmail');
+      const email      = emailInput.value.trim();
+      const password   = document.getElementById('loginPassword').value;
+      const btn        = e.target.querySelector('.submit-btn');
+
+      if (!isValidEmail(email)) { validateEmailField(emailInput); showMessage('Please enter a valid email address (e.g. you@gmail.com)'); return; }
+
+      btn.disabled = true; btn.textContent = 'Logging in...'; hideMessage();
+      try {
+        const res  = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password }) });
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem('sessionToken', data.sessionToken);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          showMessage('Login successful! Redirecting...', 'success');
+          setTimeout(() => { window.location.href = '/dashboard.html'; }, 1000);
+        } else if (data.requiresVerification) {
+          showMessage('Please verify your email. A new code has been sent.', 'error');
+          setTimeout(() => { window.location.href = '/verify-email.html?email=' + encodeURIComponent(data.email); }, 1500);
+        } else {
+          showMessage(data.message);
+        }
+      } catch { showMessage('Network error. Please try again.'); }
+      finally { btn.disabled = false; btn.textContent = 'Login'; }
+    });
+
+    // ─────────────────────────────────────────────────────────
+    //  SIGNUP FORM
+    // ─────────────────────────────────────────────────────────
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name       = document.getElementById('signupName').value;
+      const emailInput = document.getElementById('signupEmail');
+      const email      = emailInput.value.trim();
+      const password   = document.getElementById('signupPassword').value;
+      const btn        = e.target.querySelector('.submit-btn');
+
+      if (!isValidEmail(email)) { validateEmailField(emailInput); showMessage('Please enter a valid email address (e.g. you@gmail.com)'); return; }
+
+      btn.disabled = true; btn.textContent = 'Creating account...'; hideMessage();
+      try {
+        const res  = await fetch('/api/auth/signup', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, email, password }) });
+        const data = await res.json();
+        if (data.success && data.requiresVerification) {
+          showMessage('Account created! Redirecting to email verification...', 'success');
+          setTimeout(() => { window.location.href = '/verify-email.html?email=' + encodeURIComponent(data.email); }, 1000);
+        } else if (data.success) {
+          localStorage.setItem('sessionToken', data.sessionToken);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          showMessage('Account created! Redirecting...', 'success');
+          setTimeout(() => { window.location.href = '/dashboard.html'; }, 1000);
+        } else {
+          showMessage(data.message);
+        }
+      } catch { showMessage('Network error. Please try again.'); }
+      finally { btn.disabled = false; btn.textContent = 'Create Account'; }
+    });
+
+    // ─────────────────────────────────────────────────────────
+    //  ALREADY LOGGED IN CHECK
+    // ─────────────────────────────────────────────────────────
+    const sessionToken = localStorage.getItem('sessionToken');
+    if (sessionToken) {
+      fetch('/api/auth/check', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ sessionToken }) })
+        .then(r => r.json()).then(d => { if (d.authenticated) window.location.href = '/dashboard.html'; })
+        .catch(() => {});
+    }
+
+    // ─────────────────────────────────────────────────────────
+    //  FORGOT PASSWORD FLOW
+    // ─────────────────────────────────────────────────────────
+    let fpEmail = '', fpResetToken = '', fpCountdown;
+
+    function fpShowMsg(text, type = 'error') {
+      const el = document.getElementById('fpMessage');
+      el.textContent = text; el.className = `message show ${type}`;
+      if (type === 'error') { el.classList.add('shake'); setTimeout(() => el.classList.remove('shake'), 300); }
+    }
+    function fpHideMsg() { document.getElementById('fpMessage').className = 'message'; }
+
+    function fpGoToStep(n) {
+      document.querySelectorAll('.fp-step').forEach((s, i) => s.classList.toggle('active', i + 1 === n));
+      ['fpDot1','fpDot2','fpDot3'].forEach((id, i) => {
+        document.getElementById(id).className = 'fp-dot' + (i + 1 < n ? ' done' : i + 1 === n ? ' active' : '');
+      });
+      fpHideMsg();
+    }
+
+    function resetFpFlow() {
+      fpEmail = ''; fpResetToken = '';
+      clearInterval(fpCountdown);
+      fpGoToStep(1);
+      document.getElementById('fpEmail').value = '';
+      document.getElementById('fpEmail').style.borderColor = '';
+      document.getElementById('fpEmailHint').textContent = '';
+      fpOtpInputs.forEach(i => { i.value = ''; i.className = 'otp-input'; });
+      document.getElementById('fpVerifyBtn').disabled = true;
+      document.getElementById('fpNewPw').value = '';
+      document.getElementById('fpConfirmPw').value = '';
+      document.getElementById('fpStrengthLabel').textContent = '';
+      document.getElementById('fpMatchHint').textContent = '';
+      [1,2,3,4].forEach(n => document.getElementById('fpSeg'+n).style.background = 'var(--border)');
+      fpHideMsg();
+    }
+
+    // -- Step 1: Send OTP --
+    const fpEmailInput = document.getElementById('fpEmail');
+    const fpEmailHint  = document.getElementById('fpEmailHint');
+
+    fpEmailInput.addEventListener('blur', fpValidateEmail);
+    fpEmailInput.addEventListener('input', () => { if (fpEmailInput.style.borderColor === 'var(--error)') fpValidateEmail(); });
+    fpEmailInput.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('fpSendBtn').click(); });
+
+    function fpValidateEmail() {
+      const val = fpEmailInput.value.trim();
+      if (!val) { fpEmailInput.style.borderColor = ''; fpEmailHint.textContent = ''; return false; }
+      if (!isValidEmail(val)) {
+        fpEmailInput.style.borderColor = 'var(--error)';
+        fpEmailHint.textContent = '⚠ Enter a valid email like you@gmail.com';
+        fpEmailHint.style.color = 'var(--error)';
+        return false;
+      }
+      fpEmailInput.style.borderColor = 'var(--success)';
+      fpEmailHint.textContent = '✓ Looks good!';
+      fpEmailHint.style.color = 'var(--success)';
+      return true;
+    }
+
+    document.getElementById('fpSendBtn').addEventListener('click', async () => {
+      if (!fpValidateEmail()) { fpShowMsg('Please enter a valid email address.'); return; }
+      fpEmail = fpEmailInput.value.trim().toLowerCase();
+      const btn = document.getElementById('fpSendBtn');
+      btn.disabled = true; btn.textContent = 'Sending…'; fpHideMsg();
+      try {
+        const res  = await fetch('/api/auth/forgot-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: fpEmail }) });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('fpEmailDisplay').textContent = fpEmail;
+          fpGoToStep(2);
+          fpStartCountdown(60);
+          fpOtpInputs[0].focus();
+        } else {
+          fpShowMsg(data.message || 'Something went wrong. Please try again.');
+        }
+      } catch { fpShowMsg('Network error. Please try again.'); }
+      finally { btn.disabled = false; btn.textContent = 'Send Reset Code'; }
+    });
+
+    // -- Step 2: OTP --
+    const fpOtpInputs = Array.from({ length: 6 }, (_, i) => document.getElementById('fpotp' + i));
+    const fpVerifyBtn = document.getElementById('fpVerifyBtn');
+
+    function fpGetOTP() { return fpOtpInputs.map(i => i.value).join(''); }
+    function fpCheckComplete() {
+      const ok = fpOtpInputs.every(i => /[0-9]/.test(i.value));
+      fpVerifyBtn.disabled = !ok;
+      fpOtpInputs.forEach(i => i.classList.toggle('filled', /[0-9]/.test(i.value)));
+    }
+
+    fpOtpInputs.forEach((input, idx) => {
+      input.addEventListener('paste', e => {
+        e.preventDefault();
+        const digits = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
+        digits.split('').forEach((d, i) => { if (fpOtpInputs[i]) fpOtpInputs[i].value = d; });
+        fpOtpInputs[Math.min(digits.length, 5)].focus();
+        fpCheckComplete();
+      });
+      input.addEventListener('input', e => {
+        const val = e.target.value;
+        if (val.length > 1) {
+          const digits = val.replace(/\D/g,'').slice(0,6);
+          digits.split('').forEach((d, i) => { if (fpOtpInputs[i]) fpOtpInputs[i].value = d; });
+          fpOtpInputs[Math.min(digits.length, 5)].focus();
+          fpCheckComplete(); return;
+        }
+        if (val && !/[0-9]/.test(val)) { input.value = ''; return; }
+        if (val && idx < 5) fpOtpInputs[idx + 1].focus();
+        fpCheckComplete();
+      });
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && !input.value && idx > 0) { fpOtpInputs[idx-1].value = ''; fpOtpInputs[idx-1].focus(); fpCheckComplete(); }
+        if (e.key === 'ArrowLeft'  && idx > 0) fpOtpInputs[idx-1].focus();
+        if (e.key === 'ArrowRight' && idx < 5) fpOtpInputs[idx+1].focus();
+      });
+    });
+
+    // Auto-submit on last digit
+    fpOtpInputs[5].addEventListener('input', () => { if (fpGetOTP().length === 6) setTimeout(() => fpVerifyBtn.click(), 250); });
+
+    fpVerifyBtn.addEventListener('click', async () => {
+      const otp = fpGetOTP();
+      if (otp.length !== 6) return;
+      fpVerifyBtn.disabled = true; fpVerifyBtn.textContent = 'Verifying…'; fpHideMsg();
+      try {
+        const res  = await fetch('/api/auth/verify-reset-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: fpEmail, otp }) });
+        const data = await res.json();
+        if (data.success) {
+          fpResetToken = data.resetToken;
+          fpOtpInputs.forEach(i => i.classList.add('success'));
+          setTimeout(() => { fpGoToStep(3); document.getElementById('fpNewPw').focus(); }, 400);
+        } else {
+          fpOtpInputs.forEach(i => i.classList.add('error'));
+          document.getElementById('fpOtpRow').classList.add('shake');
+          setTimeout(() => document.getElementById('fpOtpRow').classList.remove('shake'), 350);
+          fpShowMsg(data.message || 'Invalid code. Please try again.');
+          fpVerifyBtn.disabled = false; fpVerifyBtn.textContent = 'Verify Code';
+          setTimeout(() => { fpOtpInputs.forEach(i => { i.value=''; i.classList.remove('error','filled'); }); fpOtpInputs[0].focus(); fpCheckComplete(); }, 900);
+        }
+      } catch { fpShowMsg('Network error. Please try again.'); fpVerifyBtn.disabled = false; fpVerifyBtn.textContent = 'Verify Code'; }
+    });
+
+    function fpStartCountdown(sec) {
+      clearInterval(fpCountdown);
+      let s = sec;
+      const btn = document.getElementById('fpResendBtn');
+      const timer = document.getElementById('fpTimer');
+      btn.disabled = true;
+      const tick = () => { timer.textContent = s > 0 ? `(${s}s)` : ''; if (s-- <= 0) { btn.disabled = false; clearInterval(fpCountdown); } };
+      tick(); fpCountdown = setInterval(tick, 1000);
+    }
+
+    document.getElementById('fpResendBtn').addEventListener('click', async () => {
+      document.getElementById('fpResendBtn').disabled = true; fpHideMsg();
+      try {
+        const res  = await fetch('/api/auth/forgot-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: fpEmail }) });
+        const data = await res.json();
+        if (data.success) {
+          fpShowMsg('New code sent! Check your inbox.', 'success');
+          fpOtpInputs.forEach(i => { i.value=''; i.classList.remove('filled','error','success'); });
+          fpOtpInputs[0].focus(); fpCheckComplete(); fpStartCountdown(60);
+        } else { fpShowMsg(data.message || 'Could not resend. Please try again.'); fpStartCountdown(30); }
+      } catch { fpShowMsg('Network error. Please try again.'); document.getElementById('fpResendBtn').disabled = false; }
+    });
+
+    // -- Step 3: New password --
+    const fpNewPw    = document.getElementById('fpNewPw');
+    const fpConfirmPw = document.getElementById('fpConfirmPw');
+    const fpSegs     = [1,2,3,4].map(n => document.getElementById('fpSeg' + n));
+    const fpStrLabel = document.getElementById('fpStrengthLabel');
+    const fpMatchHint = document.getElementById('fpMatchHint');
+
+    document.getElementById('fpToggleNew').addEventListener('click', () => {
+      fpNewPw.type = fpNewPw.type === 'password' ? 'text' : 'password';
+      document.getElementById('fpToggleNew').textContent = fpNewPw.type === 'password' ? '👁' : '🙈';
+    });
+    document.getElementById('fpToggleConfirm').addEventListener('click', () => {
+      fpConfirmPw.type = fpConfirmPw.type === 'password' ? 'text' : 'password';
+      document.getElementById('fpToggleConfirm').textContent = fpConfirmPw.type === 'password' ? '👁' : '🙈';
+    });
+
+    const strengthColors = ['','#ef4444','#f97316','#eab308','#10b981'];
+    const strengthNames  = ['','Weak','Fair','Good','Strong'];
+
+    function getStrength(pw) {
+      let s = 0;
+      if (pw.length >= 6)  s++;
+      if (pw.length >= 10) s++;
+      if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++;
+      if (/[0-9]/.test(pw)) s++;
+      if (/[^A-Za-z0-9]/.test(pw)) s++;
+      return Math.min(s, 4);
+    }
+
+    fpNewPw.addEventListener('input', () => {
+      const score = fpNewPw.value ? getStrength(fpNewPw.value) : 0;
+      fpSegs.forEach((seg, i) => { seg.style.background = i < score ? strengthColors[score] : 'var(--border)'; });
+      fpStrLabel.textContent = fpNewPw.value ? strengthNames[score] : '';
+      fpStrLabel.style.color = strengthColors[score] || 'var(--muted)';
+      fpCheckMatch();
+    });
+    fpConfirmPw.addEventListener('input', fpCheckMatch);
+
+    function fpCheckMatch() {
+      const pw = fpNewPw.value, conf = fpConfirmPw.value;
+      if (!conf) { fpMatchHint.textContent = ''; fpConfirmPw.style.borderColor = ''; return; }
+      if (pw === conf) {
+        fpConfirmPw.style.borderColor = 'var(--success)';
+        fpMatchHint.textContent = '✓ Passwords match'; fpMatchHint.style.color = 'var(--success)';
+      } else {
+        fpConfirmPw.style.borderColor = 'var(--error)';
+        fpMatchHint.textContent = '✗ Passwords do not match'; fpMatchHint.style.color = 'var(--error)';
+      }
+    }
+
+    document.getElementById('fpResetBtn').addEventListener('click', async () => {
+      const pw = fpNewPw.value, conf = fpConfirmPw.value;
+      if (pw.length < 6)  { fpShowMsg('Password must be at least 6 characters.'); return; }
+      if (pw !== conf)    { fpShowMsg('Passwords do not match.'); return; }
+      if (!fpResetToken)  { fpShowMsg('Session expired. Please start over.'); fpGoToStep(1); return; }
+
+      const btn = document.getElementById('fpResetBtn');
+      btn.disabled = true; btn.textContent = 'Resetting…'; fpHideMsg();
+      try {
+        const res  = await fetch('/api/auth/reset-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: fpEmail, resetToken: fpResetToken, newPassword: pw }) });
+        const data = await res.json();
+        if (data.success) {
+          fpGoToStep(4);
+          setTimeout(() => { showTabsView(); }, 2500);
+        } else {
+          fpShowMsg(data.message || 'Could not reset password. Please try again.');
+          btn.disabled = false; btn.textContent = 'Reset Password';
+        }
+      } catch { fpShowMsg('Network error. Please try again.'); btn.disabled = false; btn.textContent = 'Reset Password'; }
+    });
+  </script>
+</body>
+</html>
